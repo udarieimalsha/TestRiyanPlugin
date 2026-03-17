@@ -39,7 +39,7 @@ def check_for_updates():
         # If hashes don't match, we have an update!
         if local_commit != remote_commit:
             forms.alert(
-                "Aluth update ekak thiyenawa, karunakarala Update button eka click karanna!",
+                "A new update is available. Please click the Update button in the pyRevit extensions menu to install it!",
                 title="Riyan Plugin Update Available 🚀",
                 warn_icon=False
             )
