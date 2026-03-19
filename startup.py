@@ -204,9 +204,9 @@ def show_branded_update_dialog(plugin_dir):
             stdout, stderr = process.communicate()
             
             if process.returncode == 0:
-                forms.alert("Update successful! 🚀\n\nPlease restart Revit to load the new changes.", title="Update Complete")
+                show_branded_success_dialog(plugin_dir)
             else:
-                forms.alert("Failed to update mathematically. Error: " + str(stderr), title="Update Failed")
+                forms.alert("Failed to update. Error: " + str(stderr), title="Update Failed")
         except Exception as e:
             forms.alert(str(e), title="Update Error")
 
@@ -214,6 +214,109 @@ def show_branded_update_dialog(plugin_dir):
     update_btn.Click += on_update_clicked
     
     # Show dialog
+    window.ShowDialog()
+
+def show_branded_success_dialog(plugin_dir):
+    xaml_str = """
+    <Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Update Successful"
+        Width="450" Height="220"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        FontFamily="Segoe UI"
+        Background="Black"
+        WindowStyle="ToolWindow">
+
+        <Window.Resources>
+            <Style TargetType="Button" x:Key="PrimaryBtn">
+                <Setter Property="Background"      Value="#7B2C2C"/>
+                <Setter Property="Foreground"      Value="White"/>
+                <Setter Property="FontSize"        Value="13"/>
+                <Setter Property="FontWeight"      Value="SemiBold"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding"         Value="30,8"/>
+                <Setter Property="Cursor"          Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#621F1F"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#4E1818"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </Window.Resources>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header bar -->
+            <Border Grid.Row="0" Background="#111111" BorderBrush="#7B2C2C" BorderThickness="0,0,0,2" Padding="20,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="Update Complete"
+                                   FontSize="16" FontWeight="Bold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Riyan Plugin is up to date"
+                                   FontSize="11" Foreground="#A0A0A0" Margin="0,2,0,0"/>
+                    </StackPanel>
+                    <Image x:Name="LogoImage" Grid.Column="1"
+                           Height="40" Width="70"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           Margin="16,0,0,0"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Grid>
+            </Border>
+
+            <!-- Content area -->
+            <StackPanel Grid.Row="1" Margin="24,20,24,20" VerticalAlignment="Center">
+                <TextBlock Text="The plugin has been updated successfully! 🚀"
+                           FontSize="14" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8"/>
+                <TextBlock Text="Please restart Revit to load the new changes and features."
+                           FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap" Margin="0,0,0,20"/>
+                
+                <Button x:Name="OkBtn" Content="Done" Style="{StaticResource PrimaryBtn}" HorizontalAlignment="Right"/>
+            </StackPanel>
+        </Grid>
+    </Window>
+    """
+    
+    # Load Window from XAML
+    window = XamlReader.Parse(xaml_str)
+    
+    # Setup logo
+    logo_path = os.path.join(plugin_dir, "Riyan.tab", "Link Tools.panel", "Copy from Link.pushbutton", "logo.png")
+    logo_img = window.FindName("LogoImage")
+    if os.path.exists(logo_path):
+        logo_img.Source = BitmapImage(Uri(logo_path, UriKind.Absolute))
+        
+    # Wire up button
+    ok_btn = window.FindName("OkBtn")
+    def on_ok_clicked(sender, args):
+        window.Close()
+    ok_btn.Click += on_ok_clicked
+    
     window.ShowDialog()
 
 # Run the update check when Revit starts
