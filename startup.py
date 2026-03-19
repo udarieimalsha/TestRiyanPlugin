@@ -8,6 +8,7 @@ import json
 import urllib2
 import os
 import System
+import subprocess
 from pyrevit import forms
 from System.Windows.Markup import XamlReader
 from System.Windows.Media.Imaging import BitmapImage
@@ -90,6 +91,34 @@ def show_branded_update_dialog(plugin_dir):
                     </Setter.Value>
                 </Setter>
             </Style>
+
+            <Style TargetType="Button" x:Key="SecondaryBtn">
+                <Setter Property="Background"      Value="Black"/>
+                <Setter Property="Foreground"      Value="#A0A0A0"/>
+                <Setter Property="FontSize"        Value="13"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush"     Value="#404040"/>
+                <Setter Property="Padding"         Value="20,8"/>
+                <Setter Property="Cursor"          Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#1A1A1A"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </Window.Resources>
 
         <Grid>
@@ -125,10 +154,13 @@ def show_branded_update_dialog(plugin_dir):
             <StackPanel Grid.Row="1" Margin="24,20,24,20" VerticalAlignment="Center">
                 <TextBlock Text="A new update is available for the Revit tools."
                            FontSize="13" Foreground="#E0E0E0" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                <TextBlock Text="Please go to the pyRevit tab -> Extensions menu and click Update to install the newest version. Thank you!"
+                <TextBlock Text="Would you like to auto-update the plugin to the newest version now?"
                            FontSize="12" Foreground="#A0A0A0" TextWrapping="Wrap" Margin="0,0,0,20"/>
                 
-                <Button x:Name="OkBtn" Content="OK" Style="{StaticResource PrimaryBtn}" HorizontalAlignment="Right"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="LaterBtn" Content="Later" Style="{StaticResource SecondaryBtn}" Margin="0,0,10,0"/>
+                    <Button x:Name="UpdateBtn" Content="Update Now" Style="{StaticResource PrimaryBtn}"/>
+                </StackPanel>
             </StackPanel>
         </Grid>
     </Window>
@@ -147,11 +179,39 @@ def show_branded_update_dialog(plugin_dir):
         bitmap = BitmapImage(uri)
         logo_img.Source = bitmap
         
-    # Wire up button event
-    ok_btn = window.FindName("OkBtn")
-    def on_ok_clicked(sender, args):
+    # Wire up button events
+    later_btn = window.FindName("LaterBtn")
+    update_btn = window.FindName("UpdateBtn")
+    
+    def on_later_clicked(sender, args):
         window.Close()
-    ok_btn.Click += on_ok_clicked
+        
+    def on_update_clicked(sender, args):
+        window.Close()
+        try:
+            # Auto-update via Git
+            git_path = r"C:\Program Files\Git\cmd\git.exe"
+            if not os.path.exists(git_path):
+                forms.alert("Could not find Git at '{}'. Please update manually.".format(git_path), title="Update Failed")
+                return
+
+            process = subprocess.Popen(
+                [git_path, "pull", "origin", "main"],
+                cwd=plugin_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            stdout, stderr = process.communicate()
+            
+            if process.returncode == 0:
+                forms.alert("Update successful! 🚀\n\nPlease restart Revit to load the new changes.", title="Update Complete")
+            else:
+                forms.alert("Failed to update mathematically. Error: " + str(stderr), title="Update Failed")
+        except Exception as e:
+            forms.alert(str(e), title="Update Error")
+
+    later_btn.Click += on_later_clicked
+    update_btn.Click += on_update_clicked
     
     # Show dialog
     window.ShowDialog()
