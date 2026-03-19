@@ -190,14 +190,21 @@ def show_branded_update_dialog(plugin_dir):
         window.Close()
         try:
             # Auto-update via Git
-            git_path = r"C:\Program Files\Git\cmd\git.exe"
-            if not os.path.exists(git_path):
-                forms.alert("Could not find Git at '{}'. Please update manually.".format(git_path), title="Update Failed")
-                return
+            # Try to find git in system PATH first, fallback to common path
+            git_path = "git"
+            try:
+                # Use shell=True for searching system path on Windows
+                subprocess.check_call([git_path, "--version"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except Exception:
+                git_path = r"C:\Program Files\Git\cmd\git.exe"
+                if not os.path.exists(git_path):
+                    forms.alert("Git not found. Please install Git on this PC to use auto-update.", title="Update Failed")
+                    return
 
             process = subprocess.Popen(
                 [git_path, "pull", "origin", "main"],
                 cwd=plugin_dir,
+                shell=True if git_path == "git" else False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
