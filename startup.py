@@ -222,7 +222,7 @@ def show_branded_success_dialog(plugin_dir):
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Update Successful"
-        Width="450" Height="220"
+        Width="450" Height="280"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         FontFamily="Segoe UI"
